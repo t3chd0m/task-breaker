@@ -1,0 +1,17 @@
+run = "npm run dev"
+entrypoint = "server/index.ts"
+
+[nix]
+channel = "stable-24_05"
+
+[env]
+NODE_ENV = "development"
+SESSION_SECRET = "change-me-to-a-random-string-in-production"
+
+[deployment]
+run = ["sh", "-c", "npm run build && NODE_ENV=production node dist/index.cjs"]
+build = ["sh", "-c", "npm install"]
+
+[[ports]]
+localPort = 5000
+externalPort = 80
