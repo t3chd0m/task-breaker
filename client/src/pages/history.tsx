@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +25,29 @@ import {
   Inbox,
 } from "lucide-react";
 import type { TaskWithSteps, Step } from "@shared/schema";
+
+function ConfettiPiece({ index }: { index: number }) {
+  const colors = ["#E8553D", "#4ECDC4", "#FFD93D", "#6C5CE7", "#A8E6CF"];
+  const color = colors[index % colors.length];
+  const left = Math.random() * 100;
+  const delay = Math.random() * 2;
+  const size = 6 + Math.random() * 6;
+
+  return (
+    <div
+      className="fixed top-0 pointer-events-none animate-confetti"
+      style={{
+        left: `${left}%`,
+        animationDelay: `${delay}s`,
+        width: size,
+        height: size,
+        backgroundColor: color,
+        borderRadius: Math.random() > 0.5 ? "50%" : "2px",
+        zIndex: 100,
+      }}
+    />
+  );
+}
 
 const CATEGORY_EMOJI: Record<string, string> = {
   home: "🏠",
@@ -54,6 +77,8 @@ function timeAgo(dateStr: string): string {
 export default function HistoryPage() {
   const { toast } = useToast();
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [celebratedTasks, setCelebratedTasks] = useState<Set<number>>(new Set());
 
   const { data: tasks = [], isLoading } = useQuery<TaskWithSteps[]>({
     queryKey: ["/api/tasks"],
@@ -82,6 +107,20 @@ export default function HistoryPage() {
     },
   });
 
+  // Check if any expanded task just got fully completed
+  useEffect(() => {
+    if (!expandedId || !tasks.length) return;
+    const task = tasks.find((t) => t.id === expandedId);
+    if (!task) return;
+    const allDone = task.steps.length > 0 && task.steps.every((s) => s.completed === 1);
+    if (allDone && !celebratedTasks.has(task.id)) {
+      setCelebratedTasks((prev) => new Set([...prev, task.id]));
+      setShowConfetti(true);
+      const timer = setTimeout(() => setShowConfetti(false), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [tasks, expandedId, celebratedTasks]);
+
   if (isLoading) {
     return (
       <div className="w-full max-w-2xl mx-auto px-4 py-8">
@@ -99,6 +138,12 @@ export default function HistoryPage() {
 
   return (
     <div className="w-full max-w-2xl mx-auto px-4 py-8 pb-24 md:pb-8">
+      {/* CONFETTI */}
+      {showConfetti &&
+        Array.from({ length: 30 }).map((_, i) => (
+          <ConfettiPiece key={i} index={i} />
+        ))}
+
       <div className="space-y-1 mb-6">
         <h1
           className="font-display text-xl font-bold tracking-tight"
