@@ -181,83 +181,86 @@ export default function HistoryPage() {
                 className="border border-border/60 overflow-hidden"
                 data-testid={`task-card-${task.id}`}
               >
-                {/* Task header - clickable to expand */}
-                <button
-                  className="w-full text-left p-4 hover:bg-accent/30 transition-colors"
-                  onClick={() => setExpandedId(isExpanded ? null : task.id)}
-                  data-testid={`button-expand-${task.id}`}
-                  aria-expanded={isExpanded}
-                  aria-label={`${task.taskText}, ${completed} of ${total} steps done`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        {task.category && task.category !== "general" && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
-                            {CATEGORY_EMOJI[task.category] || "📋"} {task.category}
-                          </span>
-                        )}
-                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          {timeAgo(task.createdAt)}
+                {/* Task header */}
+                <div className="flex items-start justify-between gap-3 p-4">
+                  <button
+                    className="flex-1 min-w-0 text-left hover:opacity-80 transition-opacity"
+                    onClick={() => setExpandedId(isExpanded ? null : task.id)}
+                    data-testid={`button-expand-${task.id}`}
+                    aria-expanded={isExpanded}
+                    aria-label={`${task.taskText}, ${completed} of ${total} steps done`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      {task.category && task.category !== "general" && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
+                          {CATEGORY_EMOJI[task.category] || "📋"} {task.category}
                         </span>
-                      </div>
-                      <p className="font-medium text-sm truncate">
-                        {task.taskText}
-                      </p>
-                      <div className="flex items-center gap-3 mt-2">
-                        <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-green-500 transition-all"
-                            style={{ width: `${progress}%` }}
-                          />
-                        </div>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {completed}/{total} steps
-                        </span>
-                      </div>
+                      )}
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        {timeAgo(task.createdAt)}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            onClick={(e) => e.stopPropagation()}
-                            data-testid={`button-delete-${task.id}`}
-                            aria-label={`Delete task: ${task.taskText}`}
+                    <p className="font-medium text-sm truncate">
+                      {task.taskText}
+                    </p>
+                    <div className="flex items-center gap-3 mt-2">
+                      <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-green-500 transition-all"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        {completed}/{total} steps
+                      </span>
+                    </div>
+                  </button>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          data-testid={`button-delete-${task.id}`}
+                          aria-label={`Delete task: ${task.taskText}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete this task?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently remove this task and all its steps.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => deleteMutation.mutate(task.id)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            data-testid="button-confirm-delete"
                           >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete this task?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This will permanently remove this task and all its steps.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => deleteMutation.mutate(task.id)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              data-testid="button-confirm-delete"
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                    <button
+                      onClick={() => setExpandedId(isExpanded ? null : task.id)}
+                      className="p-1"
+                      aria-label={isExpanded ? "Collapse" : "Expand"}
+                    >
                       {isExpanded ? (
                         <ChevronUp className="h-4 w-4 text-muted-foreground" />
                       ) : (
                         <ChevronDown className="h-4 w-4 text-muted-foreground" />
                       )}
-                    </div>
+                    </button>
                   </div>
-                </button>
+                </div>
 
                 {/* Expanded steps */}
                 {isExpanded && (
