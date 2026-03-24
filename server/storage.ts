@@ -17,6 +17,31 @@ import { eq, desc, and } from "drizzle-orm";
 const sqlite = new Database("data.db");
 sqlite.pragma("journal_mode = WAL");
 
+// Auto-create tables on startup
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL,
+    display_name TEXT,
+    created_at TEXT NOT NULL DEFAULT ''
+  );
+  CREATE TABLE IF NOT EXISTS tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    task_text TEXT NOT NULL,
+    category TEXT DEFAULT 'general',
+    created_at TEXT NOT NULL DEFAULT ''
+  );
+  CREATE TABLE IF NOT EXISTS steps (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_id INTEGER NOT NULL,
+    step_number INTEGER NOT NULL,
+    step_text TEXT NOT NULL,
+    completed INTEGER NOT NULL DEFAULT 0
+  );
+`);
+
 export const db = drizzle(sqlite);
 
 export interface IStorage {

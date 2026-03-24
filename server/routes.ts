@@ -111,6 +111,7 @@ export async function registerRoutes(
         });
       });
     } catch (err) {
+      console.error("Registration error:", err);
       res.status(500).json({ message: "Registration failed" });
     }
   });
