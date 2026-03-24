@@ -6,7 +6,7 @@ channel = "stable-24_05"
 
 [env]
 NODE_ENV = "development"
-SESSION_SECRET = "change-me-to-a-random-string-in-production"
+SESSION_SECRET = "470e73b9eb20c171704dab5e9fea023cae7b0ec9c3f5bab316431a7599e1b02d"
 
 [deployment]
 run = ["sh", "-c", "npm run build && NODE_ENV=production node dist/index.cjs"]
