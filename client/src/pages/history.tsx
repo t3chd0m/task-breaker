@@ -114,7 +114,7 @@ export default function HistoryPage() {
     if (!task) return;
     const allDone = task.steps.length > 0 && task.steps.every((s) => s.completed === 1);
     if (allDone && !celebratedTasks.has(task.id)) {
-      setCelebratedTasks((prev) => new Set([...prev, task.id]));
+      setCelebratedTasks((prev) => { const next = new Set(Array.from(prev)); next.add(task.id); return next; });
       setShowConfetti(true);
       const timer = setTimeout(() => setShowConfetti(false), 4000);
       return () => clearTimeout(timer);

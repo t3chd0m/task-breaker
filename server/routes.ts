@@ -6,12 +6,65 @@ import {
   breakdownRequestSchema,
 } from "@shared/schema";
 import session from "express-session";
-import createMemoryStore from "memorystore";
+import type { Store } from "express-session";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import crypto from "crypto";
+import Database from "better-sqlite3";
 
-const MemoryStore = createMemoryStore(session);
+// SQLite-backed session store (survives server restarts)
+class SqliteSessionStore extends session.Store {
+  private db: ReturnType<typeof Database>;
+
+  constructor() {
+    super();
+    this.db = new Database("sessions.db");
+    this.db.pragma("journal_mode = WAL");
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS sessions (
+        sid TEXT PRIMARY KEY,
+        sess TEXT NOT NULL,
+        expired INTEGER NOT NULL
+      )
+    `);
+    // Clean expired sessions on startup
+    this.db.prepare("DELETE FROM sessions WHERE expired < ?").run(Date.now());
+  }
+
+  get(sid: string, cb: (err?: any, session?: session.SessionData | null) => void) {
+    try {
+      const row = this.db.prepare("SELECT sess FROM sessions WHERE sid = ? AND expired > ?").get(sid, Date.now()) as any;
+      cb(null, row ? JSON.parse(row.sess) : null);
+    } catch (err) { cb(err); }
+  }
+
+  set(sid: string, sess: session.SessionData, cb?: (err?: any) => void) {
+    try {
+      const maxAge = sess.cookie?.maxAge || 7 * 24 * 60 * 60 * 1000;
+      const expired = Date.now() + maxAge;
+      this.db.prepare(
+        "INSERT OR REPLACE INTO sessions (sid, sess, expired) VALUES (?, ?, ?)"
+      ).run(sid, JSON.stringify(sess), expired);
+      cb?.();
+    } catch (err) { cb?.(err); }
+  }
+
+  destroy(sid: string, cb?: (err?: any) => void) {
+    try {
+      this.db.prepare("DELETE FROM sessions WHERE sid = ?").run(sid);
+      cb?.();
+    } catch (err) { cb?.(err); }
+  }
+
+  touch(sid: string, sess: session.SessionData, cb?: (err?: any) => void) {
+    try {
+      const maxAge = sess.cookie?.maxAge || 7 * 24 * 60 * 60 * 1000;
+      const expired = Date.now() + maxAge;
+      this.db.prepare("UPDATE sessions SET expired = ? WHERE sid = ?").run(expired, sid);
+      cb?.();
+    } catch (err) { cb?.(err); }
+  }
+}
 
 // Simple password hashing (no bcrypt dependency needed)
 function hashPassword(password: string, salt?: string): { hash: string; salt: string } {
@@ -263,7 +316,7 @@ export async function registerRoutes(
       secret: process.env.SESSION_SECRET || "task-breaker-secret-key-2026",
       resave: false,
       saveUninitialized: false,
-      store: new MemoryStore({ checkPeriod: 86400000 }),
+      store: new SqliteSessionStore(),
       cookie: {
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         secure: false,
